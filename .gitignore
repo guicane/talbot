@@ -1,0 +1,4 @@
+.talbot-venv/
+__pycache__
+.dotenv
+./logs/bot_debug.log
