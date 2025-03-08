@@ -3,3 +3,4 @@ python-telegram-bot
 nest-asyncio
 requests
 beautifulsoup4
+pylint
