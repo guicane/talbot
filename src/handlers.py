@@ -8,7 +8,7 @@ from datetime import datetime
 from telegram import Update
 from telegram.ext import CallbackContext
 
-# Get the module-specific logger; logging configuration is done centrally.
+# Get the module-specific logger
 logger = logging.getLogger(__name__)
 
 # Define keyword-to-emoji mapping
@@ -18,15 +18,16 @@ KEYWORDS = {
 
 # Custom sticker mapping; broken into two lines to respect the line length limit
 STICKERS = {
-    "not worthwhile": (
-        "CAACAgQAAxkBAAEN7OJnw47vgltrMdG3wA9dbm8P-Gq36gACPA0AAscocVEUPP2ID"
-        "SRDKDYE"
-    )
+    "not worthwhile": "CAACAgQAAxkBAAEN7OJnw47vgltrMdG3wA9dbm8P-Gq36gACPA0AAscocVEUPP2IDSRDKDYE"
+}
+
+# GIF reaction mapping: keyword -> GIF URL
+GIFS = {
+    "informer": "https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExcG0yODg0dXF2bml5YWhrc24ycmpxOTl3dnF6cGo0cmV2N2N4Y2QzOCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/12jpDs6Z9rSQNO/giphy.gif",
 }
 
 # Store messages
 message_log = []
-
 
 async def handle_message(update: Update, context: CallbackContext) -> None:
     """
@@ -41,6 +42,12 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
 
     # Log message with timestamp
     message_log.append((datetime.utcnow(), chat_id, update.message.text))
+    
+    # Check for GIF triggers
+    for keyword, gif_url in GIFS.items():
+        if keyword in message_text:
+            await context.bot.send_animation(chat_id=chat_id, animation=gif_url)
+            return
 
     # Check for sticker triggers
     for keyword, sticker_id in STICKERS.items():

@@ -4,21 +4,11 @@ Module for interacting with the OMDB API and handling the /imdb command for Tele
 
 import logging
 import os
-
 import requests
-
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CommandHandler, CallbackContext, CallbackQueryHandler
 
-# Configure logging
-logging.basicConfig(
-    format="%(asctime)s - %(levelname)s - [IMDb] %(message)s",
-    level=logging.INFO,
-    handlers=[
-        logging.FileHandler("bot_debug.log"),
-        logging.StreamHandler()
-    ],
-)
+# Get the module-specific logger
 logger = logging.getLogger(__name__)
 
 # OMDB API Key (Get one from https://www.omdbapi.com/apikey.aspx)

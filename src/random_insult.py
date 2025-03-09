@@ -6,7 +6,7 @@ import logging
 import requests
 from telegram.ext import CommandHandler
 
-# Get the module-specific logger.
+# Get the module-specific logger
 logger = logging.getLogger(__name__)
 
 
@@ -45,7 +45,7 @@ async def insult_command(update, context):
 
     user_to_insult = " ".join(context.args)
     insult = fetch_insult()
-    message = f"{user_to_insult}, {insult}"
+    message = f"Hey {user_to_insult}, {insult[:1].lower() + insult[1:]}"
     logger.info("Sending insult: %s", message)
     await context.bot.send_message(chat_id=update.message.chat_id, text=message)
 

@@ -6,12 +6,13 @@ import asyncio
 import os
 import nest_asyncio
 from telegram.ext import Application, MessageHandler, filters
+from logging_config import setup_logging
 from handlers import handle_message
 from ai_summariser import summarise_messages
 from weather import register_weather_handler
 from random_insult import register_insult_handler
 from imdb import register_imdb_handler
-from logging_config import setup_logging
+from convert import register_brl_handler
 
 setup_logging()
 
@@ -28,17 +29,12 @@ async def main():
     """Main function to run the Telegram bot."""
     app = Application.builder().token(TOKEN).build()
 
-    # Add message handler
+    # Registering all handlers
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
-    # Add weather handler
     register_weather_handler(app)
-
-    # Add insult handler
     register_insult_handler(app)
-
-    # Add imdb handler
     register_imdb_handler(app)
+    register_brl_handler(app)
 
     # Schedule summary every hour
     job_queue = app.job_queue

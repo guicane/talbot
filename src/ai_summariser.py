@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 import requests
 from telegram.ext import CallbackContext
 
-# Get the module-specific logger; logging configuration is done centrally.
+# Get the module-specific logger
 logger = logging.getLogger(__name__)
 
 # Store messages globally
