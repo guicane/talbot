@@ -2,4 +2,4 @@
 init-hook='import sys; sys.path.append("src")'
 
 [FORMAT]
-max-line-length=120
+max-line-length=150

@@ -24,9 +24,9 @@ def get_saltney_weather() -> str:
         if temperature_element:
             temperature_value = temperature_element.find_next().text.strip()
             return f"Current Outside Temperature in Saltney: {temperature_value}\nProvided to you by Jake's Weather Station\nhttp://wx.ja91.uk"
-        else:
-            logger.warning("Could not find 'Outside Temperature' on wx.ja91.uk")
-            return "Weather data for Saltney is unavailable."
+
+        logger.warning("Could not find 'Outside Temperature' on wx.ja91.uk")
+        return "Weather data for Saltney is unavailable."
     except requests.RequestException as exc:
         logger.error("Error fetching Saltney weather: %s", exc)
         return "Unable to retrieve Saltney weather at this time."
@@ -92,12 +92,10 @@ def get_weather(location: str) -> str:
         weather_data = weather_response.json()['current_weather']
         temperature = weather_data['temperature']
         weather_description = "Rainy" if weather_data['weathercode'] in [61, 63, 65, 80, 81, 82] else "Clear/Cloudy"
-        logger.info(f"Weather data: {temperature}°C, Condition: {weather_description}")
-        
+        logger.info("Weather data: %s°C, Condition: %s", temperature, weather_description)
         return f"Current weather in {location}:\n🌡 Temperature: {temperature}°C\n☁ Condition: {weather_description}"
-    else:
-        logger.error(f"Error fetching weather data: {weather_response.text}")
-        return "Error retrieving weather data. Please try again later."
+    logger.error("Error fetching weather data: %s, weather_response.text")
+    return "Error retrieving weather data. Please try again later."
 
 async def weather_command(update: Update, context: CallbackContext) -> None:
     """Handle the Telegram /weather command."""

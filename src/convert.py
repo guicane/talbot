@@ -3,8 +3,8 @@ Module for handling the /brl command, which shows the current GBP to BRL convers
 """
 
 import logging
+from datetime import datetime
 import requests
-from datetime import datetime, timedelta
 from telegram import Update
 from telegram.ext import CommandHandler, CallbackContext
 
@@ -18,14 +18,13 @@ def get_gbp_brl_rate() -> str:
 
     :return: A formatted string with the conversion rate or an error message.
     """
-    
+
     try:
         url = "https://api.exchangerate.host/live?access_key=275a69f308281c5d123e7b11b76a795a"
         params = {
             "source": "GBP",
             "quotes": "GBPBRL"
         }
-        #    "access_key": "275a69f308281c5d123e7b11b76a795a"  # This key name depends on the API documentation
 
         response = requests.get(url, params=params, timeout=10)
         data = response.json()

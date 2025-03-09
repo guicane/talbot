@@ -23,7 +23,8 @@ STICKERS = {
 
 # GIF reaction mapping: keyword -> GIF URL
 GIFS = {
-    "informer": "https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExcG0yODg0dXF2bml5YWhrc24ycmpxOTl3dnF6cGo0cmV2N2N4Y2QzOCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/12jpDs6Z9rSQNO/giphy.gif",
+    "informer": "https://media3.giphy.com/media/"
+    "v1.Y2lkPTc5MGI3NjExcG0yODg0dXF2bml5YWhrc24ycmpxOTl3dnF6cGo0cmV2N2N4Y2QzOCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/12jpDs6Z9rSQNO/giphy.gif",
 }
 
 # Store messages
@@ -42,7 +43,7 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
 
     # Log message with timestamp
     message_log.append((datetime.utcnow(), chat_id, update.message.text))
-    
+
     # Check for GIF triggers
     for keyword, gif_url in GIFS.items():
         if keyword in message_text:
