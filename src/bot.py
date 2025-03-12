@@ -13,6 +13,7 @@ from weather import register_weather_handler
 from random_insult import register_insult_handler
 from imdb import register_imdb_handler
 from convert import register_brl_handler
+from dadjokes import register_dadjokes_handler
 
 setup_logging()
 
@@ -24,7 +25,6 @@ if not TOKEN:
 # Store messages
 message_log = []
 
-
 async def main():
     """Main function to run the Telegram bot."""
     app = Application.builder().token(TOKEN).build()
@@ -35,6 +35,7 @@ async def main():
     register_insult_handler(app)
     register_imdb_handler(app)
     register_brl_handler(app)
+    register_dadjokes_handler(app)
 
     # Schedule summary every hour
     job_queue = app.job_queue
@@ -42,7 +43,6 @@ async def main():
 
     # Start bot
     await app.run_polling()
-
 
 if __name__ == "__main__":
     nest_asyncio.apply()
