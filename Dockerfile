@@ -1,5 +1,5 @@
 # Use an official Python image as a base
-FROM cgr.dev/chainguard/python:latest
+FROM cgr.dev/chainguard/python:latest-dev
 
 # Set the working directory inside the container
 WORKDIR /app
