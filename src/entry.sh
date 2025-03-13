@@ -1,4 +1,4 @@
 #!/bin/bash
 
 # Run the bot
-exec python ./bot.py
+exec /usr/bin/python ./bot.py
