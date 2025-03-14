@@ -41,6 +41,9 @@ def get_weather(location: str) -> str:
     if location.lower() == "saltney":
         return get_saltney_weather()
 
+    if location.lower() == "amazingstoke":
+        location = "Basingstoke"
+
     logger.info("Fetching weather for: %s", location)
     geocode_data = None
 
