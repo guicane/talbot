@@ -10,8 +10,5 @@ COPY --chmod=+x ./src /app
 # Install dependencies
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
-# Ensure entry script has execution permissions
-#RUN chmod +x entry.sh
-
 # Set the command to run the bot
 CMD ["entry.sh"]
