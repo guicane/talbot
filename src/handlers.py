@@ -2,14 +2,11 @@
 Module for handling Telegram messages by reacting with emojis or stickers.
 """
 
-import logging
 from datetime import datetime
 
 from telegram import Update
 from telegram.ext import CallbackContext
 
-# Get the module-specific logger
-logger = logging.getLogger(__name__)
 
 KEYWORDS = {
     "cunts": "🍑",

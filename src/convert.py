@@ -2,14 +2,10 @@
 Module for handling the /brl command, which shows the current GBP to BRL conversion rate.
 """
 
-import logging
 from datetime import datetime
 import requests
 from telegram import Update
 from telegram.ext import CommandHandler, CallbackContext
-
-# Get the module-specific logger
-logger = logging.getLogger(__name__)
 
 
 def get_gbp_brl_rate() -> str:
@@ -35,10 +31,10 @@ def get_gbp_brl_rate() -> str:
             last_updated_formatted = last_update.strftime("%y-%m-%d %H:%M")
 
             return f"1 GBP = {rate:.4f} BRL\n({last_updated_formatted})"
-        logger.error("Invalid response format from exchange rate API: %s", data)
+        print("Invalid response format from exchange rate API: %s", data)
         return "Unable to retrieve conversion rate at this time."
     except requests.RequestException as exc:
-        logger.error("Error fetching GBP to BRL rate: %s", exc)
+        print("Error fetching GBP to BRL rate: %s", exc)
         return "Error retrieving conversion rate. Please try again later."
 
 
@@ -49,7 +45,7 @@ async def brl_command(update: Update, context: CallbackContext) -> None:
     :param update: Telegram update object.
     :param context: Telegram context object.
     """
-    logger.info("Received /brl command from user %s", update.message.from_user.id)
+    print("Received /brl command from user %s", update.message.from_user.id)
     conversion_message = get_gbp_brl_rate()
     await context.bot.send_message(
         chat_id=update.message.chat_id, text=conversion_message
@@ -62,5 +58,5 @@ def register_brl_handler(app) -> None:
 
     :param app: The Telegram application instance.
     """
-    logger.info("Registering /brl command handler")
+    print("Registering /brl command handler")
     app.add_handler(CommandHandler("brl", brl_command))

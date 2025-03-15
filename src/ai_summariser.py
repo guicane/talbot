@@ -2,15 +2,11 @@
 Module for AI summarisation using Anthropic's Claude API.
 """
 
-import logging
 import os
 import time
 from datetime import datetime, timedelta
 import requests
 from telegram.ext import CallbackContext
-
-# Get the module-specific logger
-logger = logging.getLogger(__name__)
 
 # Store messages globally
 MESSAGE_LOG = []
@@ -31,7 +27,7 @@ async def summarise_messages(context: CallbackContext) -> None:
     now = datetime.utcnow()
     one_hour_ago = now - timedelta(hours=1)
 
-    logger.info("Starting AI summarisation process...")
+    print("Starting AI summarisation process...")
 
     # Filter messages from the last hour
     recent_messages = [
@@ -39,10 +35,10 @@ async def summarise_messages(context: CallbackContext) -> None:
     ]
 
     if not recent_messages or all(msg.strip() == "" for msg in recent_messages):
-        logger.info("No messages to summarise in the past hour. Skipping summarisation request.")
+        print("No messages to summarise in the past hour. Skipping summarisation request.")
         return  # No valid messages to summarise
 
-    logger.info("Summarising %s messages...", len(recent_messages))
+    print("Summarising %s messages...", len(recent_messages))
     summary = summarise_text("\n".join(recent_messages))
 
     # Send summary to each relevant chat
@@ -59,7 +55,7 @@ async def summarise_messages(context: CallbackContext) -> None:
         if timestamp >= one_hour_ago
     ]
 
-    logger.info("AI summarisation process completed.")
+    print("AI summarisation process completed.")
 
 
 def summarise_text(text: str) -> str:
@@ -85,18 +81,18 @@ def summarise_text(text: str) -> str:
 
     max_retries = 3
     for attempt in range(max_retries):
-        logger.info("Sending request to AI API (attempt %s)...", attempt + 1)
+        print("Sending request to AI API (attempt %s)...", attempt + 1)
         response = requests.post(url, json=payload, headers=headers, timeout=10)
 
         if response.status_code == 200:
-            logger.info("AI summarisation successful.")
+            print("AI summarisation successful.")
             return response.json().get("completion", "[Summarisation failed]")
         if response.status_code == 429:
-            logger.warning("Rate limit exceeded. Retrying after delay...")
+            print("Rate limit exceeded. Retrying after delay...")
             time.sleep(5 * (attempt + 1))  # Exponential backoff
         else:
-            logger.error("Error from Anthropics API: %s", response.text)
+            print("Error from Anthropics API: %s", response.text)
             return "[Summarisation failed]"
 
-    logger.error("Max retries reached. AI summarisation unavailable.")
+    print("Max retries reached. AI summarisation unavailable.")
     return "[Rate limit exceeded, summarisation unavailable]"

@@ -2,20 +2,15 @@
 Module for interacting with the OMDB API and handling the /imdb command for Telegram.
 """
 
-import logging
 import os
 import requests
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CommandHandler, CallbackContext, CallbackQueryHandler
 
-# Get the module-specific logger
-logger = logging.getLogger(__name__)
-
 # OMDB API Key (Get one from https://www.omdbapi.com/apikey.aspx)
 OMDB_API_KEY = os.getenv("OMDB_API_KEY")
 if not OMDB_API_KEY:
     raise ValueError("OMDB_API_KEY environment variable is not set!")
-
 
 def search_movies(movie_name: str):
     """
@@ -33,7 +28,7 @@ def search_movies(movie_name: str):
             return data["Search"]
         return None
     except requests.RequestException as exc:
-        logger.error("Error fetching movie search results: %s", exc)
+        print("Error fetching movie search results: %s", exc)
         return None
 
 
@@ -71,7 +66,7 @@ def get_movie_info(movie_id: str) -> str:
             )
         return "Movie details not found. Please try again."
     except requests.RequestException as exc:
-        logger.error("Error fetching movie details: %s", exc)
+        print("Error fetching movie details: %s", exc)
         return "Error retrieving movie details. Please try again later."
 
 
@@ -79,7 +74,7 @@ async def imdb_command(update: Update, context: CallbackContext) -> None:
     """
     Handle the /imdb command for Telegram. Searches for movies and displays results.
     """
-    logger.info("Received /imdb command from user %s", update.message.from_user.id)
+    print("Received /imdb command from user %s", update.message.from_user.id)
     if not context.args:
         await context.bot.send_message(
             chat_id=update.message.chat_id, text="Usage: /imdb <movie name>"
@@ -140,6 +135,6 @@ def register_imdb_handler(app) -> None:
     """
     Register the /imdb command and its callback query handler with the Telegram application.
     """
-    logger.info("Registering /imdb command handler and callback query handler")
+    print("Registering /imdb command handler and callback query handler")
     app.add_handler(CommandHandler("imdb", imdb_command))
     app.add_handler(CallbackQueryHandler(movie_selection, pattern="^movie_.*"))
