@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 #RUN chmod +x entry.sh
 
 # Set the command to run the bot
-CMD ["./src/entry.sh"]
+CMD ["entry.sh"]
