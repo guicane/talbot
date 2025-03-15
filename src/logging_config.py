@@ -11,12 +11,20 @@ def setup_logging():
     This function sets up logging with both a file handler and a stream (console) handler.
     It ensures that all logs include the timestamp, log level, logger name, and message.
     """
+<<<<<<< HEAD
     LOG_DIR = "/logs"
     LOG_FILE = os.path.join(LOG_DIR, "bot_debug.log")
 
     # Ensure the log directory exists
     if not os.path.exists(LOG_DIR):
         os.makedirs(LOG_DIR)
+=======
+    LOG_DIR = "/app/logs"
+    LOG_FILE = os.path.join(LOG_DIR, "bot_debug.log")
+
+    # Ensure the log directory exists
+    os.makedirs(LOG_DIR, exist_ok=True)
+>>>>>>> 69f8b19 (fixing logging dir)
 
     def setup_logging():
         logging.basicConfig(
