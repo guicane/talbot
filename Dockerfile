@@ -11,4 +11,4 @@ COPY --chmod=+x ./src /app
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # Set the command to run the bot
-CMD ["python3 boy.py"]
+CMD ["boy.py"]
