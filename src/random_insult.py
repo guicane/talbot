@@ -18,7 +18,7 @@ def fetch_insult() -> str:
             return response.text.strip()
         return "I ran out of insults, but just imagine something mean!"
     except requests.RequestException as exc:
-        return "Error retrieving insult, please try again later."
+        return "Error retrieving insult, please try again later. ({exc})"
 
 
 async def insult_command(update, context):

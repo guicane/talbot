@@ -6,7 +6,6 @@ import asyncio
 import os
 import nest_asyncio
 from telegram.ext import Application, MessageHandler, filters
-from logging_config import setup_logging
 from handlers import handle_message
 from ai_summariser import summarise_messages
 from weather import register_weather_handler
