@@ -14,8 +14,6 @@ from imdb import register_imdb_handler
 from convert import register_brl_handler
 from dadjokes import register_dadjokes_handler
 
-setup_logging()
-
 # Load bot token from environment variables
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 if not TOKEN:
