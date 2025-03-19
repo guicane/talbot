@@ -30,7 +30,21 @@ This is a **Telegram bot** designed for group chats, offering multiple interacti
 - **Command:** `/insult @username`
 - Uses **Evil Insult API** to generate a **random insult** for the mentioned user.
 
+### **BRL/USD Graph**
+- **Command:** `/brl_usd` 
+- creates a 30 day BRL/USD graph
+
+### **BTC/USD Graph**
+- **Command:** `/btc_usd` 
+- creates a 30 day BTC/USD graph
+
 ### **Currency Convertion**
+
+- **Command:** `/convert 100 USD EUR` 
+- Converts 100 US dollars to euros
+
+- **Command:** `/currencies` 
+- Shows a list of popular currency codes that can be used
 
 - **Command:** `/brl`
 - Return the current exchange rate for GBPBRL.
