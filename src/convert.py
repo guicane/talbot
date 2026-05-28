@@ -3,6 +3,8 @@ Module for handling the /brl command, which shows the current GBP to BRL convers
 """
 
 from datetime import datetime
+import os
+import asyncio
 import requests
 from telegram import Update
 from telegram.ext import CommandHandler, CallbackContext
@@ -16,7 +18,8 @@ def get_gbp_brl_rate() -> str:
     """
 
     try:
-        url = "https://api.exchangerate.host/live?access_key=275a69f308281c5d123e7b11b76a795a"
+        api_key = os.getenv("EXCHANGERATE_API_KEY", "275a69f308281c5d123e7b11b76a795a")
+        url = f"https://api.exchangerate.host/live?access_key={api_key}"
         params = {
             "source": "GBP",
             "quotes": "GBPBRL"
@@ -46,7 +49,7 @@ async def brl_command(update: Update, context: CallbackContext) -> None:
     :param context: Telegram context object.
     """
     print("Received /brl command from user %s", update.message.from_user.id)
-    conversion_message = get_gbp_brl_rate()
+    conversion_message = await asyncio.to_thread(get_gbp_brl_rate)
     await context.bot.send_message(
         chat_id=update.message.chat_id, text=conversion_message
     )

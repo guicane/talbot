@@ -3,6 +3,7 @@ Module for handling Telegram messages by reacting with emojis or stickers.
 """
 import time
 import sqlite3
+import asyncio
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackContext
 from telegram.error import TelegramError
@@ -77,7 +78,7 @@ async def handle_summary_selection(update: Update, context: CallbackContext):
 
         print(f"[DEBUG] Retrieved {len(messages)} messages.")
 
-        summary = summarize_messages(messages)
+        summary = await asyncio.to_thread(summarize_messages, messages)
 
         print(f"[DEBUG] Sending summary to user {user_id}.")
 

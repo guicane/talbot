@@ -2,6 +2,7 @@
 Module for handling insult commands using the Evil Insult API.
 """
 
+import asyncio
 import requests
 from telegram.ext import CommandHandler
 
@@ -36,7 +37,7 @@ async def insult_command(update, context):
         return
 
     user_to_insult = " ".join(context.args)
-    insult = fetch_insult()
+    insult = await asyncio.to_thread(fetch_insult)
     message = f"Hey {user_to_insult}, {insult[:1].lower() + insult[1:]}"
     await context.bot.send_message(chat_id=update.message.chat_id, text=message)
 

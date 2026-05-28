@@ -2,6 +2,7 @@
 Module for fetching weather data and handling the Telegram /weather command.
 """
 
+import asyncio
 import requests
 from bs4 import BeautifulSoup
 from telegram import Update
@@ -113,7 +114,7 @@ async def weather_command(update: Update, context: CallbackContext) -> None:
         return
 
     location = " ".join(context.args)
-    weather_report = get_weather(location)
+    weather_report = await asyncio.to_thread(get_weather, location)
     print("Sending weather report for %s", location)
     await context.bot.send_message(
         chat_id=update.message.chat_id, text=weather_report
