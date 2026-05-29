@@ -3,6 +3,7 @@ Module for interacting with the OMDB API and handling the /imdb command for Tele
 """
 
 import os
+import asyncio
 import requests
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CommandHandler, CallbackContext, CallbackQueryHandler
@@ -82,7 +83,7 @@ async def imdb_command(update: Update, context: CallbackContext) -> None:
         return
 
     movie_name = " ".join(context.args)
-    movie_results = search_movies(movie_name)
+    movie_results = await asyncio.to_thread(search_movies, movie_name)
 
     if not movie_results:
         await context.bot.send_message(
@@ -92,7 +93,7 @@ async def imdb_command(update: Update, context: CallbackContext) -> None:
         return
 
     if len(movie_results) == 1:
-        movie_info = get_movie_info(movie_results[0]["imdbID"])
+        movie_info = await asyncio.to_thread(get_movie_info, movie_results[0]["imdbID"])
         await context.bot.send_message(
             chat_id=update.message.chat_id,
             text=movie_info,
@@ -127,7 +128,7 @@ async def movie_selection(update: Update, _context: CallbackContext) -> None:
     await query.answer()
 
     movie_id = query.data.split("_")[1]
-    movie_info = get_movie_info(movie_id)
+    movie_info = await asyncio.to_thread(get_movie_info, movie_id)
     await query.edit_message_text(text=movie_info, parse_mode="Markdown")
 
 

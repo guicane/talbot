@@ -3,6 +3,7 @@ Module for interacting with the Dad Jokes API
 and pulling Dad Jokes using the /dadjokes command for Telegram.
 """
 
+import asyncio
 import requests
 from telegram import Update
 from telegram.ext import CommandHandler, CallbackContext
@@ -35,7 +36,7 @@ async def dadjokes_command(update: Update, context: CallbackContext) -> None:
         joke = " ".join(context.args)
     else:
         # Fetch a random joke from the API
-        joke = get_dad_joke()
+        joke = await asyncio.to_thread(get_dad_joke)
 
     # Send the joke
     await context.bot.send_message(chat_id=chat_id, text=joke)

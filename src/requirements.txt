@@ -6,3 +6,5 @@ beautifulsoup4
 pylint
 transformers
 torch
+pandas
+matplotlib

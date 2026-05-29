@@ -3,26 +3,37 @@ This module contains the logic to fetch and summarize messages from the last 24 
 """
 import time
 import sqlite3
+import asyncio
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, pipeline
 import torch
 
 MODEL_NAME = "facebook/bart-large-cnn"
+summarizer = None  # pylint: disable=invalid-name
 
-# Detect if GPU is available (MPS for Mac, CUDA for NVIDIA, fallback to CPU)
-DEVICE = "mps" if torch.backends.mps.is_available() else "cpu"
-print(f"[DEBUG] Using device: {DEVICE}")
-
-try:
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME).to(DEVICE)
-    summarizer = pipeline("summarization", model=model, tokenizer=tokenizer, device=0 if DEVICE != "cpu" else -1)
-    print("[DEBUG] Summarization Model Loaded Successfully!")
-except ConnectionError:
-    print("[ERROR] Failed to connect to Hugging Face. Check your internet.")
-except OSError as e:
-    print(f"[ERROR] Model loading failed (File issue): {e}")
-except ValueError as e:
-    print(f"[ERROR] Model configuration issue: {e}")
+def get_summarizer():
+    """Lazy-load the summarizer model."""
+    # pylint: disable=global-statement, invalid-name
+    global summarizer
+    if summarizer is None:
+        print("[DEBUG] Loading Summarization Model...")
+        # Detect if GPU is available (MPS for Mac, CUDA for NVIDIA, fallback to CPU)
+        DEVICE = "mps" if torch.backends.mps.is_available() else "cpu"
+        print(f"[DEBUG] Using device: {DEVICE}")
+        try:
+            tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+            model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME).to(DEVICE)
+            summarizer = pipeline("summarization", model=model, tokenizer=tokenizer, device=0 if DEVICE != "cpu" else -1)
+            print("[DEBUG] Summarization Model Loaded Successfully!")
+        except OSError as e:
+            print(f"[ERROR] Model loading failed (File issue): {e}")
+            return None
+        except ValueError as e:
+            print(f"[ERROR] Model configuration issue: {e}")
+            return None
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            print(f"[ERROR] General error loading model: {e}")
+            return None
+    return summarizer
 
 def summarize_messages(messages):
     """Summarizes a list of messages using bart-large-cnn."""
@@ -33,8 +44,13 @@ def summarize_messages(messages):
     input_text = " ".join(messages)[:1024]  # ✅ Limit input to avoid errors
     print(f"[DEBUG] Generating summary for {len(messages)} messages...")
 
+    # Load summarizer on demand
+    sum_pipeline = get_summarizer()
+    if sum_pipeline is None:
+        return "Error: Summarization model could not be loaded."
+
     try:
-        response = summarizer(input_text, max_length=100, min_length=20, do_sample=False)
+        response = sum_pipeline(input_text, max_length=100, min_length=20, do_sample=False)
         summary = response[0]["summary_text"]
         print(f"[DEBUG] Summary Generated: {summary}")
         return summary
@@ -85,7 +101,7 @@ async def daily_group_summary(context):
 
     for chat_id in chat_ids:
         messages = fetch_messages(chat_id, start_time)
-        summary_text = summarize_messages(messages)
+        summary_text = await asyncio.to_thread(summarize_messages, messages)
 
         if summary_text:
             await context.bot.send_message(
