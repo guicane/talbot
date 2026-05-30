@@ -50,7 +50,6 @@ GIFS = {
     "v1.Y2lkPTc5MGI3NjExcG0yODg0dXF2bml5YWhrc24ycmpxOTl3dnF6cGo0cmV2N2N4Y2QzOCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/12jpDs6Z9rSQNO/giphy.gif",
 }
 
-
 async def summary_command(update: Update, context: CallbackContext):
     """Send private inline keyboard or directly generate summary if argument provided."""
     try:
@@ -62,16 +61,16 @@ async def summary_command(update: Update, context: CallbackContext):
         if context.args:
             selected_option = context.args[0].lower()
             if selected_option in SUMMARY_OPTIONS or selected_option in ["today", "yesterday"]:
-                start_time, end_time = get_timeframe_range(selected_option)
+                time_range = get_timeframe_range(selected_option)
 
                 # Try to delete the user's command message to keep group clean
                 try:
                     await update.message.delete()
-                except Exception as e:  # pylint: disable=broad-exception-caught
-                    print(f"[DEBUG] Could not delete user command message: {e}")
+                except Exception:  # pylint: disable=broad-exception-caught
+                    pass
 
                 print(f"[DEBUG] Direct fetch: Fetching messages for {selected_option}...")
-                messages = fetch_messages(chat_id, start_time, end_time)
+                messages = fetch_messages(chat_id, time_range[0], time_range[1])
                 summary = await asyncio.to_thread(summarize_messages, chat_id, messages)
 
                 if selected_option in ["today", "yesterday"]:
@@ -80,11 +79,24 @@ async def summary_command(update: Update, context: CallbackContext):
                     header = f"📌 *Summary for the last {selected_option}:*\n\n"
 
                 # Send directly to private chat
-                await context.bot.send_message(
-                    chat_id=user_id,
-                    text=f"{header}{summary}",
-                    parse_mode="Markdown"
-                )
+                try:
+                    await context.bot.send_message(
+                        chat_id=user_id,
+                        text=f"{header}{summary}",
+                        parse_mode="Markdown"
+                    )
+                except TelegramError as err:
+                    if "Forbidden" in str(err) or "conversation" in str(err):
+                        bot_info = await context.bot.get_me()
+                        user = update.message.from_user
+                        mention = f"@{user.username}" if user.username else user.first_name
+                        await context.bot.send_message(
+                            chat_id=chat_id,
+                            text=f"⚠️ {mention}, I cannot send you a private message. "
+                                 f"Please click @{bot_info.username} and press **Start** first, then try again!"
+                        )
+                        return
+                    raise err
                 return
 
             await update.message.reply_text(
@@ -98,20 +110,15 @@ async def summary_command(update: Update, context: CallbackContext):
                 InlineKeyboardButton("Today's Summary", callback_data="today"),
                 InlineKeyboardButton("Yesterday's Summary", callback_data="yesterday")
             ]
-        ]
-        for key in SUMMARY_OPTIONS:
-            keyboard.append([InlineKeyboardButton(f"{key} Summary", callback_data=key)])
-        reply_markup = InlineKeyboardMarkup(keyboard)
+        ] + [[InlineKeyboardButton(f"{key} Summary", callback_data=key)] for key in SUMMARY_OPTIONS]
 
         await update.message.reply_text(
             "Select the time range for the summary:",
-            reply_markup=reply_markup
+            reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-    except TelegramError as e:
-        print(f"[ERROR] Telegram API error: {e}")
-    except AttributeError as e:
-        print(f"[ERROR] Missing message data: {e}")
+    except (TelegramError, AttributeError) as err:
+        print(f"[ERROR] Exception during summary command: {err}")
 
 async def handle_summary_selection(update: Update, context: CallbackContext):
     """Fetch and summarize messages based on user selection."""
@@ -130,11 +137,11 @@ async def handle_summary_selection(update: Update, context: CallbackContext):
             await query.message.reply_text("❌ Invalid selection. Please try again.")
             return
 
-        start_time, end_time = get_timeframe_range(selected_option)
+        time_range = get_timeframe_range(selected_option)
 
         print(f"[DEBUG] Fetching messages for {selected_option}...")
 
-        messages = fetch_messages(chat_id, start_time, end_time)
+        messages = fetch_messages(chat_id, time_range[0], time_range[1])
 
         print(f"[DEBUG] Retrieved {len(messages)} messages.")
 
@@ -147,11 +154,23 @@ async def handle_summary_selection(update: Update, context: CallbackContext):
         else:
             header = f"📌 *Summary for the last {selected_option}:*\n\n"
 
-        await context.bot.send_message(
-            chat_id=user_id,  # Send summary in private chat
-            text=f"{header}{summary}",
-            parse_mode="Markdown"
-        )
+        try:
+            await context.bot.send_message(
+                chat_id=user_id,  # Send summary in private chat
+                text=f"{header}{summary}",
+                parse_mode="Markdown"
+            )
+        except TelegramError as err:
+            if "Forbidden" in str(err) or "conversation" in str(err):
+                bot_info = await context.bot.get_me()
+                mention = f"@{query.from_user.username}" if query.from_user.username else query.from_user.first_name
+                await context.bot.send_message(
+                    chat_id=chat_id,
+                    text=f"⚠️ {mention}, I cannot send you a private message. "
+                         f"Please click @{bot_info.username} and press **Start** first, then try again!"
+                )
+                return
+            raise err
 
         # Delete the inline keyboard menu message to keep the group chat clean
         try:
