@@ -19,6 +19,7 @@ from message_store import purge_old_messages
 from summarizer import daily_group_summary
 from usdbrl_graph import register_handlers_usdbrl
 from currencyconverter import register_converter_handler, register_currency_handler
+from naas import register_naas_handlers
 
 # Debugging
 print("Python executable:", sys.executable)
@@ -59,6 +60,7 @@ async def main():
     register_handlers_usdbrl(app)
     register_converter_handler(app)
     register_currency_handler(app)
+    register_naas_handlers(app)
 
     print("\n### Bot started! ###\n")
 
