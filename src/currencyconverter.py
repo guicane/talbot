@@ -21,7 +21,7 @@ class CurrencyConverter:
         Args:
             cache_duration (int): How long to cache rates in seconds (default: 1 hour)
         """
-        self.base_url = "https://api.exchangerate.host/latest"
+        self.base_url = "https://api.exchangerate.host/live"
         self.cache_path = "currency_rates_cache.json"
         self.cache_duration = cache_duration
         self.rates = {}
@@ -68,12 +68,21 @@ class CurrencyConverter:
     def _update_rates(self):
         """Fetch the latest exchange rates from the API."""
         try:
-            response = requests.get(self.base_url, timeout=10)
+            api_key = os.getenv("EXCHANGERATE_API_KEY", "275a69f308281c5d123e7b11b76a795a")
+            url = f"{self.base_url}?access_key={api_key}"
+            response = requests.get(url, timeout=10)
             data = response.json()
 
-            if response.status_code == 200 and 'rates' in data:
-                self.rates = data['rates']
-                self.base_currency = data['base']
+            if response.status_code == 200 and 'quotes' in data:
+                self.rates = {}
+                for key, val in data['quotes'].items():
+                    if key.startswith("USD"):
+                        self.rates[key[3:]] = val
+                    else:
+                        self.rates[key] = val
+                if "USD" not in self.rates:
+                    self.rates["USD"] = 1.0
+                self.base_currency = "USD"
                 self.last_update = datetime.now()
                 self._save_cache()
                 return True

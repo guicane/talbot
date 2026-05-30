@@ -17,7 +17,6 @@ from dadjokes import register_dadjokes_handler
 from handlers import handle_message, summary_command, handle_summary_selection
 from message_store import purge_old_messages
 from summarizer import daily_group_summary
-from btcusd_graph import register_handlers_btcusd
 from usdbrl_graph import register_handlers_usdbrl
 from currencyconverter import register_converter_handler, register_currency_handler
 
@@ -57,7 +56,6 @@ async def main():
     register_imdb_handler(app)
     register_brl_handler(app)
     register_dadjokes_handler(app)
-    register_handlers_btcusd(app)
     register_handlers_usdbrl(app)
     register_converter_handler(app)
     register_currency_handler(app)

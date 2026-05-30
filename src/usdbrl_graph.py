@@ -1,5 +1,5 @@
 """"
-Bitcoin to USD Exchange Rate Graph
+Dynamic Currency Exchange Rate Graph Generator
 """
 
 from datetime import datetime
@@ -12,84 +12,111 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt  # pylint: disable=wrong-import-position
 
-def get_usd_brl_data(days=30):
+
+def get_currency_history(from_currency, to_currency, days=30):
     """
-    Fetch USD/BRL exchange rate data for the specified number of days.
-    
+    Fetch historical exchange rate data for the specified currency pair and timeframe.
+
+    Tries querying from_currency-to_currency first. If that fails, queries the reverse
+    pair to_currency-from_currency and inverts the rates.
+
     Args:
+        from_currency (str): Source currency code (e.g., "USD")
+        to_currency (str): Target currency code (e.g., "BRL")
         days (int): Number of days of historical data to fetch
-        
+
     Returns:
-        pandas.DataFrame: DataFrame with dates and exchange rates
+        pandas.DataFrame: DataFrame with dates and exchange rates, or None
     """
-    url = f"https://economia.awesomeapi.com.br/json/daily/USD-BRL/{days}"
+    from_curr = from_currency.upper()
+    to_curr = to_currency.upper()
+
+    pair = f"{from_curr}-{to_curr}"
+    url = f"https://economia.awesomeapi.com.br/json/daily/{pair}/{days}"
+    invert = False
 
     try:
         response = requests.get(url, timeout=10)
-        data = response.json()
 
-        if not response.ok or not isinstance(data, list):
-            return None
+        # If not successful or not a list, try the reverse pair
+        if not response.ok or not isinstance(response.json(), list):
+            pair = f"{to_curr}-{from_curr}"
+            url = f"https://economia.awesomeapi.com.br/json/daily/{pair}/{days}"
+            response = requests.get(url, timeout=10)
 
-        # Process the data
+            if not response.ok or not isinstance(response.json(), list):
+                print(f"[ERROR] AwesomeAPI does not support forward or reverse pair for {from_curr}/{to_curr}")
+                return None
+            invert = True
+
         dates = []
         rates = []
 
-        for item in data:
-            ts = int(item.get("timestamp"))
-            rate = float(item.get("bid"))
-            date_str = datetime.fromtimestamp(ts).strftime("%Y-%m-%d")
-            dates.append(date_str)
-            rates.append(rate)
+        for item in response.json():
+            dates.append(datetime.fromtimestamp(int(item.get("timestamp"))).strftime("%Y-%m-%d"))
+            rates.append(1.0 / float(item.get("bid")) if invert else float(item.get("bid")))
 
-        # Create DataFrame
-        df = pd.DataFrame({
+        return pd.DataFrame({
             'date': pd.to_datetime(dates),
             'rate': rates
         }).sort_values('date')
 
-        return df
-
-    except requests.RequestException as e:
-        print(f"Request error fetching exchange rate data: {e}")
-        return None
-    except pd.errors.EmptyDataError as e:
-        print(f"DataFrame error in exchange rate data: {e}")
-        return None
-    except ValueError as e:
-        print(f"JSON parsing error in exchange rate data: {e}")
-        return None
-    except KeyError as e:
-        print(f"Missing key in exchange rate data: {e}")
+    except (requests.RequestException, pd.errors.EmptyDataError, ValueError, KeyError) as e:
+        print(f"[ERROR] Failed to fetch historical data for {from_curr}/{to_curr}: {e}")
         return None
 
-def create_usd_brl_graph(days=30, chart_title="USD/BRL Exchange Rate"):
+
+def create_currency_graph(from_currency, to_currency, days=30):
     """
-    Create a graph of the USD/BRL exchange rate.
-    
+    Create a graph of the from_currency/to_currency exchange rate.
+
     Args:
+        from_currency (str): Source currency code
+        to_currency (str): Target currency code
         days (int): Number of days of historical data to show
-        chart_title (str): Title for the chart
-        
+
     Returns:
         bytes: Raw image bytes that can be sent by the bot
         dict: Summary statistics of the exchange rate
     """
-    df = get_usd_brl_data(days)
+    from_currency = from_currency.upper()
+    to_currency = to_currency.upper()
+
+    df = get_currency_history(from_currency, to_currency, days)
 
     if df is None or len(df) < 2:
-        return None, {"error": "Could not retrieve exchange rate data"}
+        return None, {"error": f"Could not retrieve exchange rate data for {from_currency}/{to_currency}"}
 
     # Create the plot
     plt.figure(figsize=(10, 6))
     plt.plot(df['date'], df['rate'], marker='o', linestyle='-', color='#1f77b4')
+
+    # Dynamic title and labels
+    chart_title = f"{from_currency}/{to_currency} Exchange Rate"
     plt.title(chart_title)
     plt.xlabel('Date')
-    plt.ylabel('BRL per 1 USD')
+    plt.ylabel(f'{to_currency} per 1 {from_currency}')
     plt.grid(True, linestyle='--', alpha=0.7)
 
-    # Format the y-axis to show currency format
-    plt.gca().yaxis.set_major_formatter(plt.matplotlib.ticker.FormatStrFormatter('R$ %.2f'))
+    # Format y-axis dynamically based on currency
+    symbols = {
+        "BRL": "R$ ",
+        "USD": "$ ",
+        "EUR": "€ ",
+        "GBP": "£ ",
+        "JPY": "¥ "
+    }
+    symbol = symbols.get(to_currency, "")
+
+    last_rate = df['rate'].iloc[-1]
+    if last_rate < 0.1:
+        fmt = f'{symbol}%.4f'
+    elif last_rate < 1.0:
+        fmt = f'{symbol}%.3f'
+    else:
+        fmt = f'{symbol}%.2f'
+
+    plt.gca().yaxis.set_major_formatter(plt.matplotlib.ticker.FormatStrFormatter(fmt))
 
     # Rotate date labels for better readability
     plt.xticks(rotation=45)
@@ -116,52 +143,82 @@ def create_usd_brl_graph(days=30, chart_title="USD/BRL Exchange Rate"):
 
     return img_bytes, stats
 
-# Example of integration with a bot framework (e.g., python-telegram-bot)
-async def handle_exchange_rate_command(update, context):
+
+async def handle_currency_graph_command(update, context):
     """
-    Handler for the /usd_brl command in a Telegram bot.
-    
-    Example usage with python-telegram-bot:
-    from telegram import Update
-    from telegram.ext import CommandHandler, CallbackContext
-    
-    dispatcher.add_handler(CommandHandler("usd_brl", handle_exchange_rate_command))
+    Handler for the /currency_graph command in a Telegram bot.
     """
-    # Parse arguments (default to 30 days if not specified)
+    # Check if arguments are provided
+    if not context.args or len(context.args) < 2:
+        await update.message.reply_text(
+            "⚠️ Incorrect format. Use: /currency_graph <from_currency> <to_currency> [days]\n"
+            "Example: /currency_graph USD BRL\n"
+            "Example: /currency_graph GBP EUR 30"
+        )
+        return
+
+    from_curr = context.args[0].upper()
+    to_curr = context.args[1].upper()
+
+    # Default days to 30
     days = 30
-    if context.args and context.args[0].isdigit():
-        days = min(int(context.args[0]), 365)  # Limit to 1 year max
+    if len(context.args) >= 3 and context.args[2].isdigit():
+        days = min(int(context.args[2]), 365)  # Limit to 1 year max
 
     # Send a "processing" message
-    message = await update.message.reply_text("Generating USD/BRL exchange rate graph...")
+    message = await update.message.reply_text(f"Generating {from_curr}/{to_curr} exchange rate graph...")
 
     # Generate the graph in a non-blocking thread
-    result = await asyncio.to_thread(create_usd_brl_graph, days)
+    result = await asyncio.to_thread(create_currency_graph, from_curr, to_curr, days)
     img_bytes, stats = result if result else (None, None)
 
     if img_bytes is None:
-        await update.message.reply_text("Sorry, I couldn't retrieve the exchange rate data. Please try again later.")
+        await update.message.reply_text(
+            f"Sorry, I couldn't retrieve the exchange rate data for {from_curr}/{to_curr}. "
+            "Please check that both currencies are valid and supported."
+        )
+        try:
+            await message.delete()
+        except Exception:  # pylint: disable=broad-exception-caught
+            pass
         return
+
+    # Format symbol for message caption
+    symbols = {
+        "BRL": "R$",
+        "USD": "$",
+        "EUR": "€",
+        "GBP": "£",
+        "JPY": "¥"
+    }
+    sym = symbols.get(to_curr, to_curr)
+
+    # Adjust decimal places for display
+    last_rate = stats['current_rate']
+    decimals = 4 if last_rate < 0.1 else (3 if last_rate < 1.0 else 2)
 
     # Send the graph
     await context.bot.send_photo(
         chat_id=update.effective_chat.id,
         photo=img_bytes,
-        caption=f"BRL/USD Exchange Rate for the last {days} days\n\n"
-                f"Current rate: R$ {stats['current_rate']:.2f}\n"
-                f"Average: R$ {stats['avg_rate']:.2f}\n"
-                f"Range: R$ {stats['min_rate']:.2f} - R$ {stats['max_rate']:.2f}\n"
-                f"Change: {stats['change_pct']:.2f}%\n"
-                f"Period: {stats['period']}"
+        caption=f"📊 {from_curr}/{to_curr} Exchange Rate - Last {days} days\n\n"
+                f"📈 Current rate: {sym} {stats['current_rate']:.{decimals}f}\n"
+                f"📊 Average: {sym} {stats['avg_rate']:.{decimals}f}\n"
+                f"📉 Range: {sym} {stats['min_rate']:.{decimals}f} - {sym} {stats['max_rate']:.{decimals}f}\n"
+                f"🔄 Change: {stats['change_pct']:.2f}%\n"
+                f"⏱️ Period: {stats['period']}"
     )
 
     # Delete the "processing" message
-    await message.delete()
+    try:
+        await message.delete()
+    except Exception:  # pylint: disable=broad-exception-caught
+        pass
 
 
 def register_handlers_usdbrl(app) -> None:
     """
-    Register the /usd_brl command handler with the Telegram application.
+    Register the /currency_graph command handler with the Telegram application.
     """
-    print("Registering /usd_brl command handler")
-    app.add_handler(CommandHandler("usd_brl", handle_exchange_rate_command))
+    print("Registering /currency_graph command handler")
+    app.add_handler(CommandHandler("currency_graph", handle_currency_graph_command))
