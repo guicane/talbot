@@ -6,3 +6,5 @@ beautifulsoup4
 pylint
 pandas
 matplotlib
+streamlit
+
