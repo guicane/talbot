@@ -41,15 +41,7 @@ async def dadjokes_command(update: Update, context: CallbackContext) -> None:
     # Send the joke
     await context.bot.send_message(chat_id=chat_id, text=joke)
 
-    # Create a poll for rating the joke
-    poll_options = ["😂 Hilarious", "😆 Good", "😐 Meh", "🙄 Bad", "🤦 Terrible"]
-    await context.bot.send_poll(
-        chat_id=chat_id,
-        question="Rate the previous dad joke",
-        options=poll_options,
-        is_anonymous=False,
-        allows_multiple_answers=False
-    )
+
 
 # Function to register the /dadjokes command
 def register_dadjokes_handler(app):
