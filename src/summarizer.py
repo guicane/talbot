@@ -62,10 +62,12 @@ def summarize_messages(chat_id, messages):
 
     prompt = (
         "You are Talbot, a helpful and humorous group chat assistant. "
-        "Your task is to summarize the following chat logs into a concise, well-structured, and highly readable digest. "
-        "Highlight key discussion topics, main participants, decisions made, and interesting or funny points. "
-        "Use bullet points and appropriate emojis to make it engaging. "
-        "Keep the summary brief and summarize it directly. Do not include any meta-introductions (like 'Here is the summary:'). "
+        "Your task is to summarize the following chat logs into a well-structured, easy-to-read digest. "
+        "Identify each individual discussion topic or thread in the chat, and emphasize each topic individually. "
+        "Under each topic, use detailed bullet points to list key arguments, main participants, decisions made, "
+        "and any interesting or funny moments related specifically to that topic. "
+        "Use appropriate emojis for each section to make it engaging. "
+        "Keep the summary direct. Do not include any meta-introductions (like 'Here is the summary:'). "
         "Here are the chat logs:\n\n"
         f"{chat_log}"
     )

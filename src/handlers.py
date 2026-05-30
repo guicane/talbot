@@ -33,11 +33,45 @@ GIFS = {
 }
 
 
-async def summary_command(update: Update, _context: CallbackContext):
-    """Send private inline keyboard for summary timeframe selection."""
+async def summary_command(update: Update, context: CallbackContext):
+    """Send private inline keyboard or directly generate summary if argument provided."""
     try:
-        print(f"[DEBUG] User {update.message.from_user.id} requested a summary.")
+        user_id = update.message.from_user.id
+        chat_id = update.message.chat_id
+        print(f"[DEBUG] User {user_id} in chat {chat_id} requested a summary.")
 
+        # Check if an argument is provided (e.g. /summary 1h)
+        if context.args:
+            selected_option = context.args[0].lower()
+            if selected_option in SUMMARY_OPTIONS:
+                timeframe = SUMMARY_OPTIONS[selected_option]
+                now = int(time.time())
+                start_time = now - timeframe
+
+                # Try to delete the user's command message to keep group clean
+                try:
+                    await update.message.delete()
+                except Exception as e:  # pylint: disable=broad-exception-caught
+                    print(f"[DEBUG] Could not delete user command message: {e}")
+
+                print(f"[DEBUG] Direct fetch: Fetching messages from last {selected_option}...")
+                messages = fetch_messages(chat_id, start_time)
+                summary = await asyncio.to_thread(summarize_messages, chat_id, messages)
+
+                # Send directly to private chat
+                await context.bot.send_message(
+                    chat_id=user_id,
+                    text=f"📌 *Summary for the last {selected_option}:*\n\n{summary}",
+                    parse_mode="Markdown"
+                )
+                return
+
+            await update.message.reply_text(
+                f"❌ Invalid timeframe. Supported options: {', '.join(SUMMARY_OPTIONS.keys())}"
+            )
+            return
+
+        # Fallback: Send inline keyboard
         keyboard = [[InlineKeyboardButton(f"{key} Summary", callback_data=key)] for key in SUMMARY_OPTIONS]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -88,7 +122,11 @@ async def handle_summary_selection(update: Update, context: CallbackContext):
             parse_mode="Markdown"
         )
 
-        await query.message.reply_text("✅ Your summary has been sent to you in a private chat!")
+        # Delete the inline keyboard menu message to keep the group chat clean
+        try:
+            await query.message.delete()
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            print(f"[DEBUG] Could not delete inline menu message: {e}")
 
     except (sqlite3.OperationalError, sqlite3.DatabaseError) as e:
         print(f"[ERROR] Database error: {e}")
