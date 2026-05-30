@@ -102,8 +102,10 @@ def summarize_messages(chat_id, messages):
             candidate = data["candidates"][0]
             if "content" in candidate and "parts" in candidate["content"] and len(candidate["content"]["parts"]) > 0:
                 summary = candidate["content"]["parts"][0]["text"].strip()
-                print(f"[DEBUG] Gemini Summary Generated: {len(summary)} characters.")
-                return summary
+                # Escape legacy markdown characters (like stray _ and [) to prevent Telegram parsing crashes
+                safe_summary = summary.replace("_", "\\_").replace("[", "\\[")
+                print(f"[DEBUG] Gemini Summary Generated: {len(safe_summary)} characters.")
+                return safe_summary
 
         print(f"[ERROR] Unexpected Gemini API response format: {data}")
         return "Error: Summarization service returned an unexpected response."
