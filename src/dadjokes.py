@@ -28,7 +28,7 @@ async def dadjokes_command(update: Update, context: CallbackContext) -> None:
     """
     Handle the /dadjokes command for Telegram.
     """
-    print("Received /dadjokes command from user %s", {update.message.from_user.id})
+    print(f"Received /dadjokes command from user {update.message.from_user.id}")
     chat_id = update.message.chat_id
 
     if context.args:

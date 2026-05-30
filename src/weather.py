@@ -104,7 +104,7 @@ def get_weather(location: str) -> str:
 
 async def weather_command(update: Update, context: CallbackContext) -> None:
     """Handle the Telegram /weather command."""
-    print("Received /weather command from user %s", update.message.from_user.id)
+    print(f"Received /weather command from user {update.message.from_user.id}")
     if not context.args:
         print("No location provided with /weather command")
         await context.bot.send_message(

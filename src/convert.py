@@ -48,7 +48,7 @@ async def brl_command(update: Update, context: CallbackContext) -> None:
     :param update: Telegram update object.
     :param context: Telegram context object.
     """
-    print("Received /brl command from user %s", update.message.from_user.id)
+    print(f"Received /brl command from user {update.message.from_user.id}")
     conversion_message = await asyncio.to_thread(get_gbp_brl_rate)
     await context.bot.send_message(
         chat_id=update.message.chat_id, text=conversion_message
@@ -84,7 +84,7 @@ async def btc_command(update: Update, context: CallbackContext) -> None:
     """
     Handle the /btc command by fetching the BTC to USD rate and sending it to the chat.
     """
-    print("Received /btc command from user %s", update.message.from_user.id)
+    print(f"Received /btc command from user {update.message.from_user.id}")
     btc_message = await asyncio.to_thread(get_btc_usd_price)
     await context.bot.send_message(
         chat_id=update.message.chat_id, text=btc_message

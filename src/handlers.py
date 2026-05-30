@@ -56,7 +56,7 @@ async def summary_command(update: Update, context: CallbackContext):
     try:
         user_id = update.message.from_user.id
         chat_id = update.message.chat_id
-        print(f"[DEBUG] User {user_id} in chat {chat_id} requested a summary.")
+        print(f"Received /summary command from user {user_id}")
 
         # Check if an argument is provided (e.g. /summary 1h)
         if context.args:

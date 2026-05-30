@@ -75,7 +75,7 @@ async def imdb_command(update: Update, context: CallbackContext) -> None:
     """
     Handle the /imdb command for Telegram. Searches for movies and displays results.
     """
-    print("Received /imdb command from user %s", update.message.from_user.id)
+    print(f"Received /imdb command from user {update.message.from_user.id}")
     if not context.args:
         await context.bot.send_message(
             chat_id=update.message.chat_id, text="Usage: /imdb <movie name>"

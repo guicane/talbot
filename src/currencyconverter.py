@@ -203,6 +203,7 @@ async def handle_convert_command(update, context):
     Usage: /convert <amount> <from_currency> <to_currency>
     Example: /convert 100 USD EUR
     """
+    print(f"Received /convert command from user {update.message.from_user.id}")
     # Check if we have the right number of arguments
     if len(context.args) != 3:
         await update.message.reply_text(
@@ -251,6 +252,7 @@ async def handle_convert_command(update, context):
 
 async def handle_currencies_command(update, _):
     """Handler for a command that shows available currencies."""
+    print(f"Received /currencies command from user {update.message.from_user.id}")
     converter = CurrencyConverter()
     popular = converter.get_popular_currencies()
 

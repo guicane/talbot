@@ -148,6 +148,7 @@ async def handle_currency_graph_command(update, context):
     """
     Handler for the /currency_graph command in a Telegram bot.
     """
+    print(f"Received /currency_graph command from user {update.message.from_user.id}")
     # Check if arguments are provided
     if not context.args or len(context.args) < 2:
         await update.message.reply_text(

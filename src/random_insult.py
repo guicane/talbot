@@ -29,6 +29,7 @@ async def insult_command(update, context):
     :param update: Telegram update object.
     :param context: Telegram context object.
     """
+    print(f"Received /insult command from user {update.message.from_user.id}")
     if not context.args:
         print("No user specified for /insult command")
         await context.bot.send_message(
