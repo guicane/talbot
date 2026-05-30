@@ -67,6 +67,9 @@ def summarize_messages(chat_id, messages):
         "Under each topic, use detailed bullet points to list key arguments, main participants, decisions made, "
         "and any interesting or funny moments related specifically to that topic. "
         "Use appropriate emojis for each section to make it engaging. "
+        "IMPORTANT: You must write the entire summary (including topic titles, bullet points, and descriptions) "
+        "in the same primary language used in the chat logs. For example, if the chat logs are primarily in Portuguese, "
+        "the summary must be generated in Portuguese. "
         "Keep the summary direct. Do not include any meta-introductions (like 'Here is the summary:'). "
         "Here are the chat logs:\n\n"
         f"{chat_log}"
@@ -119,18 +122,24 @@ def summarize_messages(chat_id, messages):
         print(f"[ERROR] Unexpected exception during summarization: {e}")
         return "Error: Summarization failed due to an unexpected internal error."
 
-def fetch_messages(chat_id, start_time):
-    """Retrieve messages from the last X hours."""
-    print(f"[DEBUG] Fetching messages for chat {chat_id} from timestamp {start_time}...")
+def fetch_messages(chat_id, start_time, end_time=None):
+    """Retrieve messages from a given timeframe or range."""
+    print(f"[DEBUG] Fetching messages for chat {chat_id} from timestamp {start_time} to {end_time}...")
 
     conn = sqlite3.connect("messages.db")
     cursor = conn.cursor()
 
     try:
-        cursor.execute(
-            "SELECT message FROM messages WHERE chat_id = ? AND timestamp >= ?", 
-            (chat_id, start_time)
-        )
+        if end_time is not None:
+            cursor.execute(
+                "SELECT message FROM messages WHERE chat_id = ? AND timestamp >= ? AND timestamp <= ?", 
+                (chat_id, start_time, end_time)
+            )
+        else:
+            cursor.execute(
+                "SELECT message FROM messages WHERE chat_id = ? AND timestamp >= ?", 
+                (chat_id, start_time)
+            )
         messages = [row[0] for row in cursor.fetchall()]
         print(f"[DEBUG] Retrieved {len(messages)} messages from DB.")
     except sqlite3.OperationalError as e:

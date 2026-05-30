@@ -2,6 +2,7 @@
 Module for handling Telegram messages by reacting with emojis or stickers.
 """
 import time
+import datetime
 import sqlite3
 import asyncio
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -18,6 +19,23 @@ SUMMARY_OPTIONS = {
     "12h": 43200,
     "24h": 86400
 }
+
+def get_timeframe_range(selected_option):
+    """Calculate start_time and end_time for a given selected_option."""
+    now = int(time.time())
+    if selected_option in SUMMARY_OPTIONS:
+        timeframe = SUMMARY_OPTIONS[selected_option]
+        return now - timeframe, None
+    if selected_option == "today":
+        now_dt = datetime.datetime.now()
+        today_midnight = datetime.datetime(now_dt.year, now_dt.month, now_dt.day)
+        return int(today_midnight.timestamp()), None
+    if selected_option == "yesterday":
+        now_dt = datetime.datetime.now()
+        today_midnight = datetime.datetime(now_dt.year, now_dt.month, now_dt.day)
+        yesterday_midnight = today_midnight - datetime.timedelta(days=1)
+        return int(yesterday_midnight.timestamp()), int(today_midnight.timestamp())
+    return None, None
 
 KEYWORDS = {
     "cunts": "🍑",
@@ -43,10 +61,8 @@ async def summary_command(update: Update, context: CallbackContext):
         # Check if an argument is provided (e.g. /summary 1h)
         if context.args:
             selected_option = context.args[0].lower()
-            if selected_option in SUMMARY_OPTIONS:
-                timeframe = SUMMARY_OPTIONS[selected_option]
-                now = int(time.time())
-                start_time = now - timeframe
+            if selected_option in SUMMARY_OPTIONS or selected_option in ["today", "yesterday"]:
+                start_time, end_time = get_timeframe_range(selected_option)
 
                 # Try to delete the user's command message to keep group clean
                 try:
@@ -54,25 +70,37 @@ async def summary_command(update: Update, context: CallbackContext):
                 except Exception as e:  # pylint: disable=broad-exception-caught
                     print(f"[DEBUG] Could not delete user command message: {e}")
 
-                print(f"[DEBUG] Direct fetch: Fetching messages from last {selected_option}...")
-                messages = fetch_messages(chat_id, start_time)
+                print(f"[DEBUG] Direct fetch: Fetching messages for {selected_option}...")
+                messages = fetch_messages(chat_id, start_time, end_time)
                 summary = await asyncio.to_thread(summarize_messages, chat_id, messages)
+
+                if selected_option in ["today", "yesterday"]:
+                    header = f"📌 *Summary for {selected_option}:*\n\n"
+                else:
+                    header = f"📌 *Summary for the last {selected_option}:*\n\n"
 
                 # Send directly to private chat
                 await context.bot.send_message(
                     chat_id=user_id,
-                    text=f"📌 *Summary for the last {selected_option}:*\n\n{summary}",
+                    text=f"{header}{summary}",
                     parse_mode="Markdown"
                 )
                 return
 
             await update.message.reply_text(
-                f"❌ Invalid timeframe. Supported options: {', '.join(SUMMARY_OPTIONS.keys())}"
+                f"❌ Invalid timeframe. Supported options: today, yesterday, {', '.join(SUMMARY_OPTIONS.keys())}"
             )
             return
 
         # Fallback: Send inline keyboard
-        keyboard = [[InlineKeyboardButton(f"{key} Summary", callback_data=key)] for key in SUMMARY_OPTIONS]
+        keyboard = [
+            [
+                InlineKeyboardButton("Today's Summary", callback_data="today"),
+                InlineKeyboardButton("Yesterday's Summary", callback_data="yesterday")
+            ]
+        ]
+        for key in SUMMARY_OPTIONS:
+            keyboard.append([InlineKeyboardButton(f"{key} Summary", callback_data=key)])
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         await update.message.reply_text(
@@ -93,22 +121,20 @@ async def handle_summary_selection(update: Update, context: CallbackContext):
 
         user_id = query.from_user.id
         chat_id = query.message.chat_id
-        selected_option = query.data  # Get selected timeframe (e.g., "1h", "4h")
+        selected_option = query.data  # Get selected timeframe (e.g., "1h", "today")
 
         print(f"[DEBUG] User {user_id} selected: {selected_option}")
 
-        if selected_option not in SUMMARY_OPTIONS:
+        if selected_option not in SUMMARY_OPTIONS and selected_option not in ["today", "yesterday"]:
             print(f"[ERROR] Invalid selection: {selected_option}")
             await query.message.reply_text("❌ Invalid selection. Please try again.")
             return
 
-        timeframe = SUMMARY_OPTIONS[selected_option]
-        now = int(time.time())
-        start_time = now - timeframe
+        start_time, end_time = get_timeframe_range(selected_option)
 
-        print(f"[DEBUG] Fetching messages from last {selected_option}...")
+        print(f"[DEBUG] Fetching messages for {selected_option}...")
 
-        messages = fetch_messages(chat_id, start_time)
+        messages = fetch_messages(chat_id, start_time, end_time)
 
         print(f"[DEBUG] Retrieved {len(messages)} messages.")
 
@@ -116,9 +142,14 @@ async def handle_summary_selection(update: Update, context: CallbackContext):
 
         print(f"[DEBUG] Sending summary to user {user_id}.")
 
+        if selected_option in ["today", "yesterday"]:
+            header = f"📌 *Summary for {selected_option}:*\n\n"
+        else:
+            header = f"📌 *Summary for the last {selected_option}:*\n\n"
+
         await context.bot.send_message(
             chat_id=user_id,  # Send summary in private chat
-            text=f"📌 *Summary for the last {selected_option}:*\n\n{summary}",
+            text=f"{header}{summary}",
             parse_mode="Markdown"
         )
 
