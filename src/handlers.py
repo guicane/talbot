@@ -78,7 +78,7 @@ async def handle_summary_selection(update: Update, context: CallbackContext):
 
         print(f"[DEBUG] Retrieved {len(messages)} messages.")
 
-        summary = await asyncio.to_thread(summarize_messages, messages)
+        summary = await asyncio.to_thread(summarize_messages, chat_id, messages)
 
         print(f"[DEBUG] Sending summary to user {user_id}.")
 

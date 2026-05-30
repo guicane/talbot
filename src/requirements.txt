@@ -4,7 +4,5 @@ nest-asyncio
 requests
 beautifulsoup4
 pylint
-transformers
-torch
 pandas
 matplotlib
