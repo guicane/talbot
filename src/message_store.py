@@ -8,6 +8,7 @@ DB_FILE = "messages.db"
 
 def init_db():
     """Initialize the database."""
+    conn = None
     try:
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
@@ -35,6 +36,7 @@ def init_db():
 def store_message(chat_id, user_id, message):
     """Store incoming messages in the database."""
     timestamp = int(time.time())
+    conn = None
 
     try:
         conn = sqlite3.connect(DB_FILE)
@@ -61,6 +63,7 @@ def store_message(chat_id, user_id, message):
 async def purge_old_messages(_):
     """Delete messages older than 24 hours."""
     cutoff_time = int(time.time()) - 86400  # 24 hours ago
+    conn = None
     try:
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()

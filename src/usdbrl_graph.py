@@ -2,7 +2,7 @@
 Bitcoin to USD Exchange Rate Graph
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime
 import io
 import asyncio
 import pandas as pd
@@ -22,32 +22,25 @@ def get_usd_brl_data(days=30):
     Returns:
         pandas.DataFrame: DataFrame with dates and exchange rates
     """
-    # Calculate date range
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=days)
-
-    # Format dates for API
-    start_str = start_date.strftime('%Y-%m-%d')
-    end_str = end_date.strftime('%Y-%m-%d')
-
-    # Free API endpoint for currency exchange data
-    url = f"https://api.exchangerate.host/timeseries?start_date={start_str}&end_date={end_str}&base=USD&symbols=BRL"
+    url = f"https://economia.awesomeapi.com.br/json/daily/USD-BRL/{days}"
 
     try:
         response = requests.get(url, timeout=10)
         data = response.json()
 
-        if not response.ok or 'rates' not in data:
+        if not response.ok or not isinstance(data, list):
             return None
 
         # Process the data
         dates = []
         rates = []
 
-        for date, rate_data in data['rates'].items():
-            if 'BRL' in rate_data:
-                dates.append(date)
-                rates.append(rate_data['BRL'])
+        for item in data:
+            ts = int(item.get("timestamp"))
+            rate = float(item.get("bid"))
+            date_str = datetime.fromtimestamp(ts).strftime("%Y-%m-%d")
+            dates.append(date_str)
+            rates.append(rate)
 
         # Create DataFrame
         df = pd.DataFrame({

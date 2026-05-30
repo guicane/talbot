@@ -1,17 +1,27 @@
 # Use an official Python image as a base
-FROM cgr.dev/chainguard/python:latest-dev
+FROM python:3.12-slim
+
+# Create a nonroot user and group for security compatibility
+RUN groupadd -g 65532 nonroot && \
+    useradd -u 65532 -g nonroot -m -s /sbin/nologin nonroot
+
+# Explicitly create /app directory and assign it to nonroot before setting WORKDIR
+RUN mkdir -p /app && chown -R nonroot:nonroot /app
 
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy the bot files into the container
-COPY --chmod=+x ./src /app
+# Copy the bot files into the container and set ownership to nonroot
+COPY --chown=nonroot:nonroot ./src /app
+
+# Switch to nonroot user
+USER nonroot
 
 # Add ~/.local/bin to PATH to ensure installed scripts are found
 ENV PATH="/home/nonroot/.local/bin:${PATH}"
 
-# Install dependencies
-RUN pip install --no-cache-dir -r /app/requirements.txt
+# Install dependencies in the user's home directory
+RUN pip install --no-cache-dir --user -r /app/requirements.txt
 
 # Set the command to run the bot
-CMD ["bot.py"]
+CMD ["python", "bot.py"]

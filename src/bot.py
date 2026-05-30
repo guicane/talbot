@@ -8,6 +8,7 @@ import os
 import sys
 import nest_asyncio
 from telegram.ext import Application, MessageHandler, CommandHandler, filters, CallbackQueryHandler
+from telegram.request import HTTPXRequest
 from weather import register_weather_handler
 from random_insult import register_insult_handler
 from imdb import register_imdb_handler
@@ -30,12 +31,15 @@ if not TOKEN:
 
 async def main():
     """Main function to run the Telegram bot."""
-    app = Application.builder().token(TOKEN).build()
+    request = HTTPXRequest(connect_timeout=20.0, read_timeout=20.0)
+    app = Application.builder().token(TOKEN).request(request).build()
 
     # ✅ Register handlers
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CommandHandler("summary", summary_command))
-    app.add_handler(CallbackQueryHandler(handle_summary_selection, pattern="^(1h|4h|6h|12h|24h)$"))  # ✅ Ensure button clicks are handled
+    app.add_handler(
+        CallbackQueryHandler(handle_summary_selection, pattern="^(1h|4h|6h|12h|24h|today|yesterday)$")
+    )
 
     # ✅ Start job queue (ensure it is running)
     job_queue = app.job_queue
