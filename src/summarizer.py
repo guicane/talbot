@@ -4,8 +4,11 @@ This module contains the logic to fetch and summarize messages from the last 24 
 import time
 import sqlite3
 import asyncio
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, pipeline
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, pipeline, logging
 import torch
+
+# Silence Hugging Face warning/verbosity logs
+logging.set_verbosity_error()
 
 MODEL_NAME = "facebook/bart-large-cnn"
 summarizer = None  # pylint: disable=invalid-name
