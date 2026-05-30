@@ -5,6 +5,9 @@ FROM python:3.12-slim
 RUN groupadd -g 65532 nonroot && \
     useradd -u 65532 -g nonroot -m -s /sbin/nologin nonroot
 
+# Explicitly create /app directory and assign it to nonroot before setting WORKDIR
+RUN mkdir -p /app && chown -R nonroot:nonroot /app
+
 # Set the working directory inside the container
 WORKDIR /app
 
