@@ -18,7 +18,7 @@ COPY --chown=nonroot:nonroot ./src /app
 RUN chmod +x /app/entry.sh
 
 # Expose Streamlit dashboard port
-EXPOSE 8501
+EXPOSE 8051
 
 # Switch to nonroot user
 USER nonroot

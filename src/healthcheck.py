@@ -28,10 +28,10 @@ def check_health() -> bool:
         print("[HEALTHCHECK] Bot process is not running!")
         return False
 
-    # 2. Verify that the Streamlit web server is responsive on port 8501
+    # 2. Verify that the Streamlit web server is responsive on port 8051
     try:
         # pylint: disable=consider-using-with
-        response = urllib.request.urlopen("http://localhost:8501/", timeout=3)
+        response = urllib.request.urlopen("http://localhost:8051/", timeout=3)
         if response.status == 200:
             return True
     except Exception as e:  # pylint: disable=broad-exception-caught

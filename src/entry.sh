@@ -1,7 +1,7 @@
 #!/bin/bash
 
-echo "[SUPERVISOR] Starting Streamlit statistics dashboard on port 8501..."
-streamlit run dashboard.py --server.port 8501 --server.address 0.0.0.0 &
+echo "[SUPERVISOR] Starting Streamlit statistics dashboard on port 8051..."
+streamlit run dashboard.py --server.port 8051 --server.address 0.0.0.0 --server.enableCORS false --server.enableXsrfProtection false &
 STREAMLIT_PID=$!
 
 echo "[SUPERVISOR] Starting Telegram Talbot Bot..."
