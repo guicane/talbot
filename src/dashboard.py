@@ -7,6 +7,7 @@ import sqlite3
 from datetime import datetime
 import pandas as pd
 import streamlit as st
+from message_store import init_db
 
 # Configure page metadata and layout
 st.set_page_config(
@@ -41,13 +42,16 @@ def load_data(db_path="messages.db"):
     """
     Query all messages from the SQLite database and load them into a pandas DataFrame.
     """
+    # Ensure database and columns are initialized
+    init_db()
+
     if not os.path.exists(db_path):
         return pd.DataFrame()
 
     conn = None
     try:
         conn = sqlite3.connect(db_path)
-        query = "SELECT chat_id, user_id, message, timestamp FROM messages"
+        query = "SELECT chat_id, user_id, message, timestamp, chat_title, user_name FROM messages"
         df = pd.read_sql_query(query, conn)
         return df
     except sqlite3.Error as e:
@@ -91,18 +95,55 @@ else:
     df_messages['hour'] = df_messages['datetime'].dt.hour
     df_messages['date_hour'] = df_messages['datetime'].dt.strftime('%Y-%m-%d %H:00')
 
+    # Handle missing or null chat titles and user names for backward compatibility
+    df_messages['chat_display'] = df_messages['chat_title'].fillna('').astype(str)
+    df_messages.loc[df_messages['chat_display'].str.strip() == '', 'chat_display'] = \
+        df_messages['chat_id'].astype(str)
+
+    df_messages['user_display'] = df_messages['user_name'].fillna('').astype(str)
+    df_messages.loc[df_messages['user_display'].str.strip() == '', 'user_display'] = \
+        df_messages['user_id'].astype(str)
+
+    # Build unique chats mapping for the sidebar selectbox
+    chat_mapping = df_messages.groupby('chat_id')['chat_display'].first().to_dict()
+    sorted_chat_ids = sorted(chat_mapping.keys(), key=lambda cid: chat_mapping[cid].lower())
+
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("💬 Select Group Chat")
+
+    chat_options = ["Global"] + sorted_chat_ids
+
+    def format_chat(chat_val):
+        """Format helper to show display name instead of ID in selectbox."""
+        if chat_val == "Global":
+            return "Global (All Chats)"
+        return chat_mapping.get(chat_val, str(chat_val))
+
+    selected_chat = st.sidebar.selectbox(
+        "Filter stats by chat:",
+        options=chat_options,
+        format_func=format_chat
+    )
+
+    # Filter dataset based on selection
+    if selected_chat != "Global":
+        df_filtered = df_messages[df_messages['chat_id'] == selected_chat]
+    else:
+        df_filtered = df_messages
+
     # Metric Row
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
-        st.metric(label="💬 Total Messages Logged", value=len(df_messages))
+        st.metric(label="💬 Total Messages Logged", value=len(df_filtered))
     with col2:
-        st.metric(label="👥 Unique Active Chats", value=df_messages['chat_id'].nunique())
+        st.metric(label="👥 Unique Active Chats", value=df_filtered['chat_id'].nunique())
     with col3:
-        st.metric(label="👤 Unique Active Users", value=df_messages['user_id'].nunique())
+        st.metric(label="👤 Unique Active Users", value=df_filtered['user_id'].nunique())
     with col4:
-        avg_len = df_messages['message'].str.len().mean()
-        st.metric(label="📝 Avg Message Length", value=f"{avg_len:.1f} chars")
+        avg_len = df_filtered['message'].str.len().mean()
+        avg_len_val = f"{avg_len:.1f} chars" if not pd.isna(avg_len) else "0.0 chars"
+        st.metric(label="📝 Avg Message Length", value=avg_len_val)
 
     st.markdown("---")
 
@@ -111,31 +152,32 @@ else:
 
     with left_col:
         st.subheader("📈 Message Distribution per Group Chat")
-        # Count messages per chat
-        chat_counts = df_messages['chat_id'].value_counts().reset_index()
-        chat_counts.columns = ['Chat ID', 'Message Count']
-        chat_counts['Chat ID'] = chat_counts['Chat ID'].astype(str)
-        st.bar_chart(chat_counts.set_index('Chat ID'))
+        # Count messages per chat using beautiful display names
+        chat_counts = df_filtered['chat_display'].value_counts().reset_index()
+        chat_counts.columns = ['Chat Group', 'Message Count']
+        st.bar_chart(chat_counts.set_index('Chat Group'))
 
     with right_col:
         st.subheader("🥇 Top Active Users (Most Talkative)")
-        # Count messages per user
-        user_counts = df_messages['user_id'].value_counts().head(10).reset_index()
-        user_counts.columns = ['User ID', 'Message Count']
-        user_counts['User ID'] = user_counts['User ID'].astype(str)
-        st.bar_chart(user_counts.set_index('User ID'))
+        # Count messages per user using beautiful display names
+        user_counts = df_filtered['user_display'].value_counts().head(10).reset_index()
+        user_counts.columns = ['User', 'Message Count']
+        st.bar_chart(user_counts.set_index('User'))
 
     st.markdown("---")
 
     # Visualizations Row 2
     st.subheader("⏱️ Hourly Message Count Distribution (Daily Activity)")
-    hour_counts = df_messages['hour'].value_counts().reindex(range(24), fill_value=0).reset_index()
+    hour_counts = df_filtered['hour'].value_counts().reindex(range(24), fill_value=0).reset_index()
     hour_counts.columns = ['Hour of Day (24h)', 'Message Count']
     st.area_chart(hour_counts.set_index('Hour of Day (24h)'))
 
     # Footer/Status message
     st.markdown("---")
-    st.caption(f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | Talbot statistics are parsed dynamically from sqlite context.")
+    st.caption(
+        f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | "
+        "Talbot statistics are parsed dynamically from sqlite context."
+    )
 
 # Handle Auto-refresh logic at the end of the script
 if auto_refresh:

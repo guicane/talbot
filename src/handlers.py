@@ -206,10 +206,14 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
         chat_id = update.message.chat_id
         user_id = update.message.from_user.id
 
+        chat_title = update.message.chat.title or "Private Chat"
+        user = update.message.from_user
+        user_name = f"@{user.username}" if user.username else user.first_name
+
         print(f"✅ [BOT] Received message from {user_id} in chat {chat_id}: {message_text}")
 
         # ✅ Ensure message is stored
-        store_message(chat_id, user_id, message_text)
+        store_message(chat_id, user_id, message_text, chat_title, user_name)
 
     except (sqlite3.OperationalError, sqlite3.DatabaseError) as e:
         print(f"[ERROR] Database error: {e}")
